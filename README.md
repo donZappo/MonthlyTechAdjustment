@@ -17,6 +17,7 @@ MechTechScale: 1; (Change the scaling of MechTech. This is to have functionality
 
 
 ***KNOWN ISSUES***
+
 Partial save game compatibility. If you want to add this mod to your saved game, make sure your financial level is current set at "Normal" with a +0 bonus.
 
 ***INSTALLATION NOTES***
