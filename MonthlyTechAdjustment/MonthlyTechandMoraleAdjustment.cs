@@ -43,6 +43,50 @@ namespace MonthlyTechandMoraleAdjustment
                 }
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
+
+                foreach (Pilot pilot in __instance.PilotRoster)
+                {
+                    if (pilot.pilotDef.PilotTags.Contains("pilot_noble"))
+                    {
+                        if (valuee == 2)
+                        {
+                            pilot.pilotDef.PilotTags.Add("pilot_morale_high");
+                            pilot.pilotDef.PilotTags.Remove("pilot_morale_low");
+                        }
+                        else if (valuee < 0)
+                        {
+                            pilot.pilotDef.PilotTags.Remove("pilot_morale_high");
+                            pilot.pilotDef.PilotTags.Add("pilot_morale_low");
+                        }
+                    }
+                }
+
+                foreach (Pilot pilot in __instance.PilotRoster)
+                {
+                    var rng = new System.Random();
+                    int Roll = rng.Next(1, 100);
+                    if (pilot.pilotDef.PilotTags.Contains("pilot_dishonest"))
+                    {
+                        if (Roll <= 33)
+                        {
+                            pilot.pilotDef.PilotTags.Add("pilot_drunk");
+                            pilot.pilotDef.PilotTags.Remove("pilot_unstable");
+                            pilot.pilotDef.PilotTags.Remove("pilot_criminal");
+                        }
+                        else if (Roll > 33 && Roll <= 66)
+                        {
+                            pilot.pilotDef.PilotTags.Remove("pilot_drunk");
+                            pilot.pilotDef.PilotTags.Add("pilot_unstable");
+                            pilot.pilotDef.PilotTags.Remove("pilot_criminal");
+                        }
+                        else
+                        {
+                            pilot.pilotDef.PilotTags.Remove("pilot_drunk");
+                            pilot.pilotDef.PilotTags.Remove("pilot_unstable");
+                            pilot.pilotDef.PilotTags.Add("pilot_criminal");
+                        }
+                    }
+                }
             }
         }
     }
@@ -69,6 +113,8 @@ namespace MonthlyTechandMoraleAdjustment
             __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
             __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
             __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange, -1, true);
+
+            
         }
     }
     [HarmonyPatch(typeof(SGCaptainsQuartersStatusScreen), "RefreshData")]
