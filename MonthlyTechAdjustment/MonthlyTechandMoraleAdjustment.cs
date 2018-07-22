@@ -46,7 +46,7 @@ namespace MonthlyTechandMoraleAdjustment
 
                 foreach (Pilot pilot in __instance.PilotRoster)
                 {
-                    if (pilot.pilotDef.PilotTags.Contains("pilot_noble"))
+                    if (pilot.pilotDef.PilotTags.Contains("pilot_noble") && settings.QuirksEnabled)
                     {
                         if (valuee == 2)
                         {
@@ -65,7 +65,7 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     var rng = new System.Random();
                     int Roll = rng.Next(1, 100);
-                    if (pilot.pilotDef.PilotTags.Contains("pilot_dishonest"))
+                    if (pilot.pilotDef.PilotTags.Contains("pilot_dishonest") && settings.QuirksEnabled)
                     {
                         if (Roll <= 33)
                         {
@@ -231,5 +231,6 @@ namespace MonthlyTechandMoraleAdjustment
     {
         public bool AdjustTechs = true;
         public int MechTechScale = 1;
+        public bool QuirksEnabled = false;
     }
 }
