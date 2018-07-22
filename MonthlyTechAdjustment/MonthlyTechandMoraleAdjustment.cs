@@ -136,12 +136,12 @@ namespace MonthlyTechandMoraleAdjustment
                     int TechNum = num3 - 2;
                     if (TechNum <= 0)
                     {
-                        ChangeComb = keyValuePair.Value.ToString() + ", " + (2 * TechNum).ToString() + " Techs";
+                        ChangeComb = keyValuePair.Value.ToString() + ", " + (2 * TechNum).ToString() + " 'Techs";
                         moraleFields[num3].text = ChangeComb;
                     }
                     else
                     {
-                        ChangeComb = "+" + keyValuePair.Value.ToString() + ", +" + TechNum.ToString() + " Techs";
+                        ChangeComb = "+" + keyValuePair.Value.ToString() + ", +" + TechNum.ToString() + " 'Techs";
                         moraleFields[num3].text = ChangeComb;
                     }
                     num3++;
@@ -160,7 +160,7 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     MString = "+" + MString;
                 }
-                string SString = skillnum.ToString() + " Techs";
+                string SString = skillnum.ToString() + " 'Techs";
                 if (skillnum > 0)
                 {
                     SString = "+" + SString;
