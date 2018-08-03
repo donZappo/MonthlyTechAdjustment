@@ -30,12 +30,13 @@ namespace MonthlyTechandMoraleAdjustment
             if (updateMorale)
             {
                 Fields.ExpenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
-                if (Fields.ExpenseLevel < 0)
+                int Expenses = Fields.ExpenseLevel;
+                if (Expenses < 0)
                 {
-                    Fields.ExpenseLevel = Fields.ExpenseLevel * 2;
+                    Expenses = Expenses * 2;
                 }
-                int num = Fields.ExpenseLevel * settings.MechTechScale;
-                int num2 = Fields.ExpenseLevel;
+                int num = Expenses * settings.MechTechScale;
+                int num2 = Expenses;
                 if (!settings.AdjustTechs)
                 {
                     num = 0;
