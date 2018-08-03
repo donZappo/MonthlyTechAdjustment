@@ -29,13 +29,13 @@ namespace MonthlyTechandMoraleAdjustment
             Settings settings = Helper.LoadSettings();
             if (updateMorale)
             {
-                int valuee = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
-                if (valuee < 0)
+                Fields.ExpenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
+                if (Fields.ExpenseLevel < 0)
                 {
-                    valuee = valuee * 2;
+                    Fields.ExpenseLevel = Fields.ExpenseLevel * 2;
                 }
-                int num = valuee * settings.MechTechScale;
-                int num2 = valuee;
+                int num = Fields.ExpenseLevel * settings.MechTechScale;
+                int num2 = Fields.ExpenseLevel;
                 if (!settings.AdjustTechs)
                 {
                     num = 0;
@@ -48,12 +48,12 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     if (pilot.pilotDef.PilotTags.Contains("pilot_noble") && settings.QuirksEnabled)
                     {
-                        if (valuee == 2)
+                        if (Fields.ExpenseLevel == 2)
                         {
                             pilot.pilotDef.PilotTags.Add("pilot_morale_high");
                             pilot.pilotDef.PilotTags.Remove("pilot_morale_low");
                         }
-                        else if (valuee < 0)
+                        else if (Fields.ExpenseLevel < 0)
                         {
                             pilot.pilotDef.PilotTags.Remove("pilot_morale_high");
                             pilot.pilotDef.PilotTags.Add("pilot_morale_low");
@@ -97,11 +97,11 @@ namespace MonthlyTechandMoraleAdjustment
         public static void Postfix(SimGameState __instance)
         {
             Settings settings = Helper.LoadSettings();
-            int valuee = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
+            int valuee = Fields.ExpenseLevel;
             int MoraleChange = 5 * valuee;
             if (valuee < 0)
             {
-                valuee = valuee * 2;
+                valuee = Fields.ExpenseLevel * 2;
             }
             int num = -valuee * settings.MechTechScale;
             int num2 = -valuee;
