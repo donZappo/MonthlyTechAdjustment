@@ -42,8 +42,26 @@ namespace MonthlyTechandMoraleAdjustment
                     num = 0;
                     num2 = 0;
                 }
+
+                __instance.CompanyStats.GetValue<int>("MechTechSkill");
+                var MechTechSkillStart = __instance.CompanyStats.GetValue<int>("MechTechSkill");
+                var MedTechSkillStart = __instance.CompanyStats.GetValue<int>("MedTechSkill");
+
+                if (MechTechSkillStart + num < 1)
+                {
+                    num = -(MechTechSkillStart - settings.MechTechScale);
+                }
+
+                if (MedTechSkillStart + num2 < 1)
+                {
+                    num2 = -(MedTechSkillStart - 1);
+                }
+                
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
+
+                Fields.DeltaMechTech = num;
+                Fields.DeltaMedTech = num2;
 
                 foreach (Pilot pilot in __instance.PilotRoster)
                 {
@@ -104,8 +122,13 @@ namespace MonthlyTechandMoraleAdjustment
             {
                 valuee = Fields.ExpenseLevel * 2;
             }
-            int num = -valuee * settings.MechTechScale;
-            int num2 = -valuee;
+            //int num = -valuee * settings.MechTechScale;
+            //int num2 = -valuee;
+            int num = -Fields.DeltaMechTech;
+            int num2 = -Fields.DeltaMedTech;
+
+            
+
             if (!settings.AdjustTechs)
             {
                 num = 0;
@@ -115,7 +138,7 @@ namespace MonthlyTechandMoraleAdjustment
             __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
             __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange, -1, true);
 
-            
+
         }
     }
     [HarmonyPatch(typeof(SGCaptainsQuartersStatusScreen), "RefreshData")]
