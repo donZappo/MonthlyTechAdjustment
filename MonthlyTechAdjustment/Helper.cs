@@ -27,7 +27,7 @@ namespace MonthlyTechandMoraleAdjustment
             try
             {
                 int unixTimestamp = (int)(saveTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                string filePath = $"{Pre_Control.ModDirectory}/saves/" + instanceGUID + "-" + unixTimestamp + ".json";
+                string filePath = $"Mods/MonthlyTechandMoraleAdjustment/saves/" + instanceGUID + "-" + unixTimestamp + ".json";
                 (new FileInfo(filePath)).Directory.Create();
                 using (StreamWriter writer = new StreamWriter(filePath, true))
                 {
@@ -47,7 +47,7 @@ namespace MonthlyTechandMoraleAdjustment
             try
             {
                 int unixTimestamp = (int)(saveTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                string filePath = $"{Pre_Control.ModDirectory}/saves/" + instanceGUID + "-" + unixTimestamp + ".json";
+                string filePath = $"Mods/MonthlyTechandMoraleAdjustment/saves/" + instanceGUID + "-" + unixTimestamp + ".json";
                 if (File.Exists(filePath))
                 {
                     using (StreamReader r = new StreamReader(filePath))

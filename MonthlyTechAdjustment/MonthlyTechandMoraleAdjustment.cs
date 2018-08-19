@@ -9,6 +9,8 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using BattleTech.Save;
+using BattleTech.Save.SaveGameStructure;
 
 
 namespace MonthlyTechandMoraleAdjustment
@@ -16,12 +18,30 @@ namespace MonthlyTechandMoraleAdjustment
     public static class Pre_Control
     {
         internal static string ModDirectory;
-        public static void Init(string directory)
+        public static void Init(string directory, string settingsJson)
         {
             HarmonyInstance.Create("dZ.Zappo.MonthlyTechAdjustment").PatchAll(Assembly.GetExecutingAssembly());
             ModDirectory = directory;
         }
         
+    }
+    [HarmonyPatch(typeof(GameInstanceSave))]
+    [HarmonyPatch(new Type[] { typeof(GameInstance), typeof(SaveReason) })]
+    public static class GameInstanceSave_Constructor_Patch
+    {
+        static void Postfix(GameInstanceSave __instance)
+        {
+            HelperHelper.SaveState(__instance.InstanceGUID, __instance.SaveTime);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameInstance), "Load")]
+    public static class GameInstance_Load_Patch
+    {
+        static void Prefix(GameInstanceSave save)
+        {
+            HelperHelper.LoadState(save.InstanceGUID, save.SaveTime);
+        }
     }
     [HarmonyPatch(typeof(SimGameState), "SetExpenditureLevel")]
     public static class Adjust_Techs_Financial_Report_Patch
