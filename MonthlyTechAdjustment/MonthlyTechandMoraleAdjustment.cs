@@ -15,9 +15,11 @@ namespace MonthlyTechandMoraleAdjustment
 {
     public static class Pre_Control
     {
-        public static void Init()
+        internal static string ModDirectory;
+        public static void Init(string directory)
         {
             HarmonyInstance.Create("dZ.Zappo.MonthlyTechAdjustment").PatchAll(Assembly.GetExecutingAssembly());
+            ModDirectory = directory;
         }
         
     }
@@ -134,9 +136,22 @@ namespace MonthlyTechandMoraleAdjustment
                 num = 0;
                 num2 = 0;
             }
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange, -1, true);
+
+            int FixMorale = 0;
+            int FixMechTech = 0;
+            int FixMedTech = 0;
+
+            if(settings.FixSavedGame)
+            {
+                FixMorale = settings.FixMorale;
+                FixMechTech = settings.FixMechtech;
+                FixMedTech = settings.FixMedTech;
+            }
+
+
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num + FixMechTech, -1, true);
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2 + FixMedTech, -1, true);
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange - FixMorale, -1, true);
 
 
         }
@@ -256,5 +271,10 @@ namespace MonthlyTechandMoraleAdjustment
         public bool AdjustTechs = true;
         public int MechTechScale = 1;
         public bool QuirksEnabled = false;
+
+        public bool FixSavedGame = false;
+        public int FixMorale = 0;
+        public int FixMechtech = 0;
+        public int FixMedTech = 0;
     }
 }
