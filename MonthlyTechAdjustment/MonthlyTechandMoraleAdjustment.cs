@@ -140,6 +140,9 @@ namespace MonthlyTechandMoraleAdjustment
             Settings settings = Helper.LoadSettings();
             int valuee = Fields.ExpenseLevel;
             int MoraleChange = 5 * valuee;
+            if (valuee == -2)
+                MoraleChange = MoraleChange - 5;
+
             if (valuee < 0)
             {
                 valuee = Fields.ExpenseLevel * 2;
