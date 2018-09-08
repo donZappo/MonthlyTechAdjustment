@@ -68,6 +68,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helper.cs" />
     <Compile Include="Holder.cs" />
     <Compile Include="MonthlyTechandMoraleAdjustment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

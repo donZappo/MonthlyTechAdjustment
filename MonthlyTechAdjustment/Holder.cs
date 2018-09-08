@@ -9,6 +9,8 @@ namespace MonthlyTechandMoraleAdjustment
     {
 
         public static int ExpenseLevel = 0;
+        public static int DeltaMechTech = 0;
+        public static int DeltaMedTech = 0;
         
     }
 }

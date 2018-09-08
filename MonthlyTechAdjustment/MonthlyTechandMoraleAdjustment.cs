@@ -9,17 +9,39 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using BattleTech.Save;
+using BattleTech.Save.SaveGameStructure;
 
 
 namespace MonthlyTechandMoraleAdjustment
 {
     public static class Pre_Control
     {
-        public static void Init()
+        internal static string ModDirectory;
+        public static void Init(string directory, string settingsJson)
         {
             HarmonyInstance.Create("dZ.Zappo.MonthlyTechAdjustment").PatchAll(Assembly.GetExecutingAssembly());
+            ModDirectory = directory;
         }
         
+    }
+    [HarmonyPatch(typeof(GameInstanceSave), MethodType.Constructor)]
+    [HarmonyPatch(new Type[] { typeof(GameInstance), typeof(SaveReason) })]
+    public static class GameInstanceSave_Constructor_Patch
+    {
+        static void Postfix(GameInstanceSave __instance)
+        {
+            HelperHelper.SaveState(__instance.InstanceGUID, __instance.SaveTime);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameInstance), "Load")]
+    public static class GameInstance_Load_Patch
+    {
+        static void Prefix(GameInstanceSave save)
+        {
+            HelperHelper.LoadState(save.InstanceGUID, save.SaveTime);
+        }
     }
     [HarmonyPatch(typeof(SimGameState), "SetExpenditureLevel")]
     public static class Adjust_Techs_Financial_Report_Patch
@@ -42,8 +64,26 @@ namespace MonthlyTechandMoraleAdjustment
                     num = 0;
                     num2 = 0;
                 }
+
+                __instance.CompanyStats.GetValue<int>("MechTechSkill");
+                var MechTechSkillStart = __instance.CompanyStats.GetValue<int>("MechTechSkill");
+                var MedTechSkillStart = __instance.CompanyStats.GetValue<int>("MedTechSkill");
+
+                if (MechTechSkillStart + num < 1)
+                {
+                    num = -(MechTechSkillStart - settings.MechTechScale);
+                }
+
+                if (MedTechSkillStart + num2 < 1)
+                {
+                    num2 = -(MedTechSkillStart - 1);
+                }
+                
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
                 __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
+
+                Fields.DeltaMechTech = num;
+                Fields.DeltaMedTech = num2;
 
                 foreach (Pilot pilot in __instance.PilotRoster)
                 {
@@ -113,22 +153,43 @@ namespace MonthlyTechandMoraleAdjustment
             Settings settings = Helper.LoadSettings();
             int valuee = Fields.ExpenseLevel;
             int MoraleChange = 5 * valuee;
+            if (valuee == -2)
+                MoraleChange = MoraleChange - 5;
+
             if (valuee < 0)
             {
                 valuee = Fields.ExpenseLevel * 2;
             }
-            int num = -valuee * settings.MechTechScale;
-            int num2 = -valuee;
+            //int num = -valuee * settings.MechTechScale;
+            //int num2 = -valuee;
+            int num = -Fields.DeltaMechTech;
+            int num2 = -Fields.DeltaMedTech;
+
+            
+
             if (!settings.AdjustTechs)
             {
                 num = 0;
                 num2 = 0;
             }
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange, -1, true);
 
-            
+            int FixMorale = 0;
+            int FixMechTech = 0;
+            int FixMedTech = 0;
+
+            if(settings.FixSavedGame)
+            {
+                FixMorale = settings.FixMorale;
+                FixMechTech = settings.FixMechtech;
+                FixMedTech = settings.FixMedTech;
+            }
+
+
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num + FixMechTech, -1, true);
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2 + FixMedTech, -1, true);
+            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange - FixMorale, -1, true);
+
+
         }
     }
     [HarmonyPatch(typeof(SGCaptainsQuartersStatusScreen), "RefreshData")]
@@ -246,5 +307,10 @@ namespace MonthlyTechandMoraleAdjustment
         public bool AdjustTechs = true;
         public int MechTechScale = 1;
         public bool QuirksEnabled = false;
+
+        public bool FixSavedGame = false;
+        public int FixMorale = 0;
+        public int FixMechtech = 0;
+        public int FixMedTech = 0;
     }
 }
