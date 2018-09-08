@@ -140,7 +140,8 @@ namespace MonthlyTechandMoraleAdjustment
             // optionally changing the number displayed but not the value
             //Color colorRef;
             //__instance.NumMechTechText.SetText("{0}", __instance.simState.GetCompanyModifiedInt("MechTechSkill", out colorRef) / 1000f);
-            __instance.NumMechTechText.fontSize = 14;
+            Settings settings = Helper.LoadSettings();
+            __instance.NumMechTechText.fontSize = settings.fontsize;
             __instance.NumMechTechText.enableWordWrapping = false;
         }
     }
@@ -312,5 +313,7 @@ namespace MonthlyTechandMoraleAdjustment
         public int FixMorale = 0;
         public int FixMechtech = 0;
         public int FixMedTech = 0;
+
+        public int fontsize = 20;
     }
 }
