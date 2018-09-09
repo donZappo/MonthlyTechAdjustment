@@ -146,6 +146,20 @@ namespace MonthlyTechandMoraleAdjustment
         }
     }
 
+    [HarmonyPatch(typeof(SGMedTechPointsDisplay), nameof(SGMedTechPointsDisplay.Refresh))]
+    public static class SGMedTechPointsDisplay_Refresh_Patch
+    {
+        public static void Postfix(SGMedTechPointsDisplay __instance)
+        {
+            // optionally changing the number displayed but not the value
+            //Color colorRef;
+            //__instance.NumMechTechText.SetText("{0}", __instance.simState.GetCompanyModifiedInt("MechTechSkill", out colorRef) / 1000f);
+            Settings settings = Helper.LoadSettings();
+            __instance.NumMedTechText.fontSize = settings.fontsize;
+            __instance.NumMedTechText.enableWordWrapping = false;
+        }
+    }
+
     [HarmonyPatch(typeof(SimGameState), "OnNewQuarterBegin")]
     public static class Reset_State_Patch
     {
