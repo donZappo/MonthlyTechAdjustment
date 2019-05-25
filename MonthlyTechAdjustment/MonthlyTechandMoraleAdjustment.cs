@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using TMPro;
 using BattleTech.Save;
 using BattleTech.Save.SaveGameStructure;
+using HBS.Collections;
 
 
 namespace MonthlyTechandMoraleAdjustment
@@ -46,7 +47,7 @@ namespace MonthlyTechandMoraleAdjustment
     [HarmonyPatch(typeof(SimGameState), "SetExpenditureLevel")]
     public static class Adjust_Techs_Financial_Report_Patch
     {
-        public static void Prefix(SimGameState __instance, bool updateMorale)
+        public static void Prefix(SimGameState __instance, bool updateMorale, List<TemporarySimGameResult> ___TemporaryResultTracker)
         {
             Settings settings = Helper.LoadSettings();
             if (updateMorale)
@@ -92,12 +93,44 @@ namespace MonthlyTechandMoraleAdjustment
                         if (Fields.ExpenseLevel == 2)
                         {
                             pilot.pilotDef.PilotTags.Add("pilot_morale_high");
-                            pilot.pilotDef.PilotTags.Remove("pilot_morale_low");
+
+                            var eventTagSet = new TagSet();
+
+                            Traverse.Create(eventTagSet).Field("items").SetValue(new string[] { "pilot_morale_high" });
+                            Traverse.Create(eventTagSet).Field("tagSetSourceFile").SetValue("Tags/PilotTags");
+                            Traverse.Create(eventTagSet).Method("UpdateHashCode").GetValue();
+
+                            var EventTime = new TemporarySimGameResult();
+                            EventTime.ResultDuration = 30;
+                            EventTime.Scope = EventScope.MechWarrior;
+                            EventTime.TemporaryResult = true;
+                            EventTime.AddedTags = eventTagSet;
+                            Traverse.Create(EventTime).Field("targetPilot").SetValue(pilot);
+
+                            Traverse.Create(__instance).Method("AddOrRemoveTempTags", new[] { typeof(TemporarySimGameResult), typeof(bool) }).
+                                GetValue(EventTime, true);
+                            ___TemporaryResultTracker.Add(EventTime);
                         }
                         else if (Fields.ExpenseLevel < 0)
                         {
-                            pilot.pilotDef.PilotTags.Remove("pilot_morale_high");
                             pilot.pilotDef.PilotTags.Add("pilot_morale_low");
+
+                            var eventTagSet = new TagSet();
+
+                            Traverse.Create(eventTagSet).Field("items").SetValue(new string[] { "pilot_morale_low" });
+                            Traverse.Create(eventTagSet).Field("tagSetSourceFile").SetValue("Tags/PilotTags");
+                            Traverse.Create(eventTagSet).Method("UpdateHashCode").GetValue();
+
+                            var EventTime = new TemporarySimGameResult();
+                            EventTime.ResultDuration = 30;
+                            EventTime.Scope = EventScope.MechWarrior;
+                            EventTime.TemporaryResult = true;
+                            EventTime.AddedTags = eventTagSet;
+                            Traverse.Create(EventTime).Field("targetPilot").SetValue(pilot);
+
+                            Traverse.Create(__instance).Method("AddOrRemoveTempTags", new[] { typeof(TemporarySimGameResult), typeof(bool) }).
+                                GetValue(EventTime, true);
+                            ___TemporaryResultTracker.Add(EventTime);
                         }
                     }
                 }
