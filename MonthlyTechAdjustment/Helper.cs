@@ -3,6 +3,9 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using UnityEngine;
+using Harmony;
+using BattleTech.Save.Test;
+using System.Linq;
 
 namespace MonthlyTechandMoraleAdjustment
 {
@@ -19,53 +22,57 @@ namespace MonthlyTechandMoraleAdjustment
             DeltaMedTech = deltamedtech;
         }
     }
-
-    public class HelperHelper
+    public class SaveHandling
     {
-        public static void SaveState(string instanceGUID, DateTime saveTime)
+        [HarmonyPatch(typeof(SimGameState), "_OnAttachUXComplete")]
+        public static class SimGameState__OnAttachUXComplete_Patch
         {
-            try
+            public static void Postfix()
             {
-                int unixTimestamp = (int)(saveTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                string baseDirectory = Directory.GetParent(Directory.GetParent($"{ Pre_Control.ModDirectory}").FullName).FullName;
-                string filePath = baseDirectory + $"/ModSaves/MonthlyTechandMoraleAdjustment/" + instanceGUID + "-" + unixTimestamp + ".json";
-                (new FileInfo(filePath)).Directory.Create();
-                using (StreamWriter writer = new StreamWriter(filePath, true))
+                var sim = UnityGameInstance.BattleTechGame.Simulation;
+                if (sim.CompanyTags.Any(x => x.StartsWith("MTMA{")))
                 {
-                    SaveFields fields = new SaveFields(Fields.ExpenseLevel, Fields.DeltaMechTech, Fields.DeltaMedTech);
-                    string json = JsonConvert.SerializeObject(fields);
-                    writer.Write(json);
+                    DeserializeMTMA();
                 }
-            }
-            catch (Exception ex)
-            {
-                Helper.Logger.LogError(ex);
             }
         }
 
-        public static void LoadState(string instanceGUID, DateTime saveTime)
+        [HarmonyPatch(typeof(SerializableReferenceContainer), "Save")]
+        public static class SerializableReferenceContainer_Save_Patch
         {
-            try
+            public static void Prefix()
             {
-                int unixTimestamp = (int)(saveTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-                string baseDirectory = Directory.GetParent(Directory.GetParent($"{ Pre_Control.ModDirectory}").FullName).FullName;
-                string filePath = baseDirectory + $"/ModSaves/MonthlyTechandMoraleAdjustment/" + instanceGUID + "-" + unixTimestamp + ".json";
-                if (File.Exists(filePath))
-                {
-                    using (StreamReader r = new StreamReader(filePath))
-                    {
-                        string json = r.ReadToEnd();
-                        SaveFields save = JsonConvert.DeserializeObject<SaveFields>(json);
-                        Fields.ExpenseLevel = save.ExpenseLevel;
-                        Fields.DeltaMechTech = save.DeltaMechTech;
-                        Fields.DeltaMedTech = save.DeltaMedTech;
-                    }
-                }
+                if (UnityGameInstance.BattleTechGame.Simulation == null) return;
+                SerializeMTMA();
             }
-            catch (Exception ex)
+        }
+
+        [HarmonyPatch(typeof(SerializableReferenceContainer), "Load")]
+        public static class SerializableReferenceContainer_Load_Patch
+        {
+            // get rid of tags before loading because vanilla behaviour doesn't purge them
+            public static void Prefix()
             {
-                Helper.Logger.LogError(ex);
+                var sim = UnityGameInstance.BattleTechGame.Simulation;
+                if (sim == null) return;
+                sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
             }
+        }
+
+        internal static void SerializeMTMA()
+        {
+            var sim = UnityGameInstance.BattleTechGame.Simulation;
+            sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
+            sim.CompanyTags.Add("MTMA" + JsonConvert.SerializeObject(Adjust_Techs_Financial_Report_Patch.SaveFields));
+        }
+
+        internal static void DeserializeMTMA()
+        {
+            var sim = UnityGameInstance.BattleTechGame.Simulation;
+            Adjust_Techs_Financial_Report_Patch.SaveFields = JsonConvert.DeserializeObject<SaveFields>(sim.CompanyTags.First(x => x.StartsWith("MTMA{")).Substring(4));
+            Fields.ExpenseLevel = Adjust_Techs_Financial_Report_Patch.SaveFields.ExpenseLevel;
+            Fields.DeltaMechTech = Adjust_Techs_Financial_Report_Patch.SaveFields.DeltaMechTech;
+            Fields.DeltaMedTech = Adjust_Techs_Financial_Report_Patch.SaveFields.DeltaMedTech;
         }
     }
 }

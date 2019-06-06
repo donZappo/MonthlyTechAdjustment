@@ -24,68 +24,57 @@ namespace MonthlyTechandMoraleAdjustment
             HarmonyInstance.Create("dZ.Zappo.MonthlyTechAdjustment").PatchAll(Assembly.GetExecutingAssembly());
             ModDirectory = directory;
         }
-        
-    }
-    [HarmonyPatch(typeof(GameInstanceSave), MethodType.Constructor)]
-    [HarmonyPatch(new Type[] { typeof(GameInstance), typeof(SaveReason) })]
-    public static class GameInstanceSave_Constructor_Patch
-    {
-        static void Postfix(GameInstanceSave __instance)
-        {
-            HelperHelper.SaveState(__instance.InstanceGUID, __instance.SaveTime);
-        }
-    }
 
-    [HarmonyPatch(typeof(GameInstance), "Load")]
-    public static class GameInstance_Load_Patch
-    {
-        static void Prefix(GameInstanceSave save)
-        {
-            HelperHelper.LoadState(save.InstanceGUID, save.SaveTime);
-        }
     }
+    
+        
     [HarmonyPatch(typeof(SimGameState), "SetExpenditureLevel")]
     public static class Adjust_Techs_Financial_Report_Patch
     {
-        public static void Prefix(SimGameState __instance, bool updateMorale, List<TemporarySimGameResult> ___TemporaryResultTracker)
+    public static SaveFields SaveFields;
+    public static void Prefix(SimGameState __instance, bool updateMorale, List<TemporarySimGameResult> ___TemporaryResultTracker)
         {
             Settings settings = Helper.LoadSettings();
             if (updateMorale)
             {
-                Fields.ExpenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
-                int Expenses = Fields.ExpenseLevel;
-                if (Expenses < 0)
+                var expenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
+                    
+                if (expenseLevel < 0)
                 {
-                    Expenses = Expenses * 2;
+                    expenseLevel = expenseLevel * 2;
                 }
-                int num = Expenses * settings.MechTechScale;
-                int num2 = Expenses;
+                int dMechTech = expenseLevel * settings.MechTechScale;
+                int dMedTech = expenseLevel;
+
                 if (!settings.AdjustTechs)
                 {
-                    num = 0;
-                    num2 = 0;
+                    dMechTech = 0;
+                    dMedTech = 0;
                 }
 
-                __instance.CompanyStats.GetValue<int>("MechTechSkill");
-                var MechTechSkillStart = __instance.CompanyStats.GetValue<int>("MechTechSkill");
-                var MedTechSkillStart = __instance.CompanyStats.GetValue<int>("MedTechSkill");
+                var StartingMechTech = __instance.CompanyStats.GetValue<int>("MechTechSkill");
+                var StartingMedTech = __instance.CompanyStats.GetValue<int>("MedTechSkill");
+                var MechTChange = StartingMechTech + dMechTech;
+                var MedTChange = StartingMedTech + dMedTech;
 
-                if (MechTechSkillStart + num < 1)
-                {
-                    num = -(MechTechSkillStart - settings.MechTechScale);
-                }
+                if (MechTChange < 1)
+                    MechTChange = 1;
+                if (MedTChange < 1)
+                    MedTChange = 1;
 
-                if (MedTechSkillStart + num2 < 1)
-                {
-                    num2 = -(MedTechSkillStart - 1);
-                }
-                
-                __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num, -1, true);
-                __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2, -1, true);
+                __instance.CompanyStats.Set<int>("MechTechSkill", MechTChange);
+                __instance.CompanyStats.Set<int>("MedTechSkill", MedTChange);
 
-                Fields.DeltaMechTech = num;
-                Fields.DeltaMedTech = num2;
+                Fields.DeltaMechTech = StartingMechTech - MechTChange;
+                Fields.DeltaMedTech = StartingMedTech - MedTChange;
+                Fields.ExpenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
 
+
+                SaveFields = new SaveFields(Fields.ExpenseLevel, Fields.DeltaMechTech, Fields.DeltaMedTech);
+                SaveHandling.SerializeMTMA();
+
+
+                //Pilot Quirk area
                 foreach (Pilot pilot in __instance.PilotRoster)
                 {
                     if (pilot.pilotDef.PilotTags.Contains("pilot_noble") && settings.QuirksEnabled)
@@ -165,7 +154,7 @@ namespace MonthlyTechandMoraleAdjustment
         }
     }
 
-    [HarmonyPatch(typeof(SGMechTechPointsDisplay), nameof(SGMechTechPointsDisplay.Refresh))]
+    [HarmonyPatch(typeof(SGMechTechPointsDisplay), "Refresh")]
     public static class SGMechTechPointsDisplay_Refresh_Patch
     {
         public static void Postfix(SGMechTechPointsDisplay __instance)
@@ -179,7 +168,7 @@ namespace MonthlyTechandMoraleAdjustment
         }
     }
 
-    [HarmonyPatch(typeof(SGMedTechPointsDisplay), nameof(SGMedTechPointsDisplay.Refresh))]
+    [HarmonyPatch(typeof(SGMedTechPointsDisplay), "Refresh")]
     public static class SGMedTechPointsDisplay_Refresh_Patch
     {
         public static void Postfix(SGMedTechPointsDisplay __instance)
@@ -199,56 +188,39 @@ namespace MonthlyTechandMoraleAdjustment
         public static void Postfix(SimGameState __instance)
         {
             Settings settings = Helper.LoadSettings();
-            int valuee = Fields.ExpenseLevel;
-            int MoraleChange = 5 * valuee;
-            if (valuee == -2)
-                MoraleChange = MoraleChange - 5;
+            var expenselevel = Fields.ExpenseLevel;
+            int MoraleChange = 0;
+            if (expenselevel == -2)
+                MoraleChange = __instance.Constants.Story.SpartanMoraleModifier;
+            if (expenselevel == -1)
+                MoraleChange = __instance.Constants.Story.RestrictedMoraleModifier;
+            if (expenselevel == 0)
+                MoraleChange = __instance.Constants.Story.NormalMoraleModifier;
+            if (expenselevel == 1)
+                MoraleChange = __instance.Constants.Story.GenerousMoraleModifier;
+            if (expenselevel == 2)
+                MoraleChange = __instance.Constants.Story.ExtravagantMoraleModifier;
 
-            if (valuee < 0)
-            {
-                valuee = Fields.ExpenseLevel * 2;
-            }
-            //int num = -valuee * settings.MechTechScale;
-            //int num2 = -valuee;
-            int num = -Fields.DeltaMechTech;
-            int num2 = -Fields.DeltaMedTech;
+            int newMechValue = __instance.CompanyStats.GetValue<int>("MechTechSkill") + Fields.DeltaMechTech;
+            int newMedValue = __instance.CompanyStats.GetValue<int>("MedTechSkill") + Fields.DeltaMedTech;
+            int newMoraleValue = __instance.CompanyStats.GetValue<int>("Morale") - MoraleChange;
 
-            
-
-            if (!settings.AdjustTechs)
-            {
-                num = 0;
-                num2 = 0;
-            }
-
-            int FixMorale = 0;
-            int FixMechTech = 0;
-            int FixMedTech = 0;
-
-            if(settings.FixSavedGame)
-            {
-                FixMorale = settings.FixMorale;
-                FixMechTech = settings.FixMechtech;
-                FixMedTech = settings.FixMedTech;
-            }
-
-
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MechTechSkill", StatCollection.StatOperation.Int_Add, num + FixMechTech, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "MedTechSkill", StatCollection.StatOperation.Int_Add, num2 + FixMedTech, -1, true);
-            __instance.CompanyStats.ModifyStat<int>("SimGame", 0, "Morale", StatCollection.StatOperation.Int_Subtract, MoraleChange - FixMorale, -1, true);
-
+            __instance.CompanyStats.Set<int>("MechTechSkill", newMechValue);
+            __instance.CompanyStats.Set<int>("MedTechSkill", newMedValue);
+            __instance.CompanyStats.Set<int>("Morale", newMoraleValue);
 
         }
     }
     [HarmonyPatch(typeof(SGCaptainsQuartersStatusScreen), "RefreshData")]
     public static class Update_UI
     {
-        public static void Postfix(SGCaptainsQuartersStatusScreen __instance)
+        public static void Postfix(SGCaptainsQuartersStatusScreen __instance, EconomyScale expenditureLevel)
         {
             Settings settings = Helper.LoadSettings();
             var moraleFields = Traverse.Create(__instance).Field("ExpenditureLvlBtnMoraleFields").GetValue<List<TextMeshProUGUI>>();
             var SimGameTrav = Traverse.Create(__instance).Field("simState").GetValue<SimGameState>();
-            EconomyScale expenditureLevel = SimGameTrav.ExpenditureLevel;
+            var sim = UnityGameInstance.BattleTechGame.Simulation;
+
             int num3 = 0;
             if (settings.AdjustTechs)
             {
@@ -257,7 +229,12 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     SimGameTrav.SetExpenditureLevel(keyValuePair.Key, false);
                     int TechNum = num3 - 2;
-                    if (TechNum <= 0)
+                    if (TechNum == -2)
+                    {
+                        ChangeComb = keyValuePair.Value.ToString() + ", " + (-4).ToString() + " Techs";
+                        moraleFields[num3].text = ChangeComb;
+                    }
+                    else if (TechNum <= 0 && TechNum != -2)
                     {
                         ChangeComb = keyValuePair.Value.ToString() + ", " + (2 * TechNum).ToString() + " Techs";
                         moraleFields[num3].text = ChangeComb;
@@ -272,14 +249,22 @@ namespace MonthlyTechandMoraleAdjustment
 
                 SimGameTrav.SetExpenditureLevel(expenditureLevel, false);
 
-                int num = SimGameTrav.ExpenditureMoraleValue[SimGameTrav.ExpenditureLevel];
-                int skillnum = num / 5;
-                if (skillnum < 0)
-                {
-                    skillnum = skillnum * 2;
-                }
-                string MString = num.ToString();
-                if (num > 0)
+                int ELMV = SimGameTrav.ExpenditureMoraleValue[SimGameTrav.ExpenditureLevel];
+                int skillnum = 0;
+                
+                if (ELMV == sim.Constants.Story.SpartanMoraleModifier)
+                    skillnum = -4;
+                if (ELMV == sim.Constants.Story.RestrictedMoraleModifier)
+                    skillnum = -2;
+                if (ELMV == sim.Constants.Story.NormalMoraleModifier)
+                    skillnum = 0;
+                if (ELMV == sim.Constants.Story.GenerousMoraleModifier)
+                    skillnum = 1;
+                if (ELMV == sim.Constants.Story.ExtravagantMoraleModifier)
+                    skillnum = 2;
+
+                string MString = ELMV.ToString();
+                if (ELMV > 0)
                 {
                     MString = "+" + MString;
                 }
@@ -324,15 +309,15 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     streamWriter.WriteLine(string.Concat(new string[]
                     {
-                    "Message :",
-                    ex.Message,
-                    "<br/>",
-                    Environment.NewLine,
-                    "StackTrace :",
-                    ex.StackTrace,
-                    Environment.NewLine,
-                    "Date :",
-                    DateTime.Now.ToString()
+                "Message :",
+                ex.Message,
+                "<br/>",
+                Environment.NewLine,
+                "StackTrace :",
+                ex.StackTrace,
+                Environment.NewLine,
+                "Date :",
+                DateTime.Now.ToString()
                     }));
                     streamWriter.WriteLine(Environment.NewLine + "-----------------------------------------------------------------------------" + Environment.NewLine);
                 }
@@ -355,11 +340,6 @@ namespace MonthlyTechandMoraleAdjustment
         public bool AdjustTechs = true;
         public int MechTechScale = 1;
         public bool QuirksEnabled = false;
-
-        public bool FixSavedGame = false;
-        public int FixMorale = 0;
-        public int FixMechtech = 0;
-        public int FixMedTech = 0;
 
         public int fontsize = 20;
     }
