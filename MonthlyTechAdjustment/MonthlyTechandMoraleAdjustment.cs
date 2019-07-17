@@ -134,19 +134,19 @@ namespace MonthlyTechandMoraleAdjustment
                         {
                             pilot.pilotDef.PilotTags.Add("pilot_drunk");
                             pilot.pilotDef.PilotTags.Remove("pilot_unstable");
-                            pilot.pilotDef.PilotTags.Remove("pilot_criminal");
+                            pilot.pilotDef.PilotTags.Remove("pilot_rebellious");
                         }
                         else if (Roll > 33 && Roll <= 66)
                         {
                             pilot.pilotDef.PilotTags.Remove("pilot_drunk");
                             pilot.pilotDef.PilotTags.Add("pilot_unstable");
-                            pilot.pilotDef.PilotTags.Remove("pilot_criminal");
+                            pilot.pilotDef.PilotTags.Remove("pilot_rebellious");
                         }
                         else
                         {
                             pilot.pilotDef.PilotTags.Remove("pilot_drunk");
                             pilot.pilotDef.PilotTags.Remove("pilot_unstable");
-                            pilot.pilotDef.PilotTags.Add("pilot_criminal");
+                            pilot.pilotDef.PilotTags.Add("pilot_rebellious");
                         }
                     }
                 }
