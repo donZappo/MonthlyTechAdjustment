@@ -70,6 +70,8 @@
   <ItemGroup>
     <Compile Include="Helper.cs" />
     <Compile Include="Holder.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="ModSettings.cs" />
     <Compile Include="MonthlyTechandMoraleAdjustment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

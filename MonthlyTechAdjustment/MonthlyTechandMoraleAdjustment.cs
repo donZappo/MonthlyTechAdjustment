@@ -12,18 +12,64 @@ using TMPro;
 using BattleTech.Save;
 using BattleTech.Save.SaveGameStructure;
 using HBS.Collections;
+using static MonthlyTechandMoraleAdjustment.Logger;
 
 
 namespace MonthlyTechandMoraleAdjustment
 {
     public static class Pre_Control
     {
-        internal static string ModDirectory;
-        public static void Init(string directory, string settingsJson)
+        #region Init
+
+        public static void Init(string modDir, string settings)
         {
-            HarmonyInstance.Create("dZ.Zappo.MonthlyTechAdjustment").PatchAll(Assembly.GetExecutingAssembly());
-            ModDirectory = directory;
+            var harmony = HarmonyInstance.Create("com.MonthlyTechAndMorale");
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            // read settings
+            try
+            {
+                Settings = JsonConvert.DeserializeObject<ModSettings>(settings);
+                Settings.modDirectory = modDir;
+            }
+            catch (Exception)
+            {
+                Settings = new ModSettings();
+            }
+
+            // blank the logfile
+            Clear();
+            // PrintObjectFields(Settings, "Settings");
         }
+        // logs out all the settings and their values at runtime
+        internal static void PrintObjectFields(object obj, string name)
+        {
+            LogDebug($"[START {name}]");
+
+            var settingsFields = typeof(ModSettings)
+                .GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            foreach (var field in settingsFields)
+            {
+                if (field.GetValue(obj) is IEnumerable &&
+                    !(field.GetValue(obj) is string))
+                {
+                    LogDebug(field.Name);
+                    foreach (var item in (IEnumerable)field.GetValue(obj))
+                    {
+                        LogDebug("\t" + item);
+                    }
+                }
+                else
+                {
+                    LogDebug($"{field.Name,-30}: {field.GetValue(obj)}");
+                }
+            }
+
+            LogDebug($"[END {name}]");
+        }
+
+        #endregion
+
+        internal static ModSettings Settings;
 
     }
     
@@ -34,7 +80,7 @@ namespace MonthlyTechandMoraleAdjustment
     public static SaveFields SaveFields;
     public static void Prefix(SimGameState __instance, bool updateMorale, List<TemporarySimGameResult> ___TemporaryResultTracker)
         {
-            Settings settings = Helper.LoadSettings();
+            var settings = Pre_Control.Settings;
             if (updateMorale)
             {
                 var expenseLevel = __instance.CompanyStats.GetValue<int>("ExpenseLevel");
@@ -162,7 +208,7 @@ namespace MonthlyTechandMoraleAdjustment
             // optionally changing the number displayed but not the value
             //Color colorRef;
             //__instance.NumMechTechText.SetText("{0}", __instance.simState.GetCompanyModifiedInt("MechTechSkill", out colorRef) / 1000f);
-            Settings settings = Helper.LoadSettings();
+            var settings = Pre_Control.Settings;
             __instance.NumMechTechText.fontSize = settings.fontsize;
             __instance.NumMechTechText.enableWordWrapping = false;
         }
@@ -176,7 +222,7 @@ namespace MonthlyTechandMoraleAdjustment
             // optionally changing the number displayed but not the value
             //Color colorRef;
             //__instance.NumMechTechText.SetText("{0}", __instance.simState.GetCompanyModifiedInt("MechTechSkill", out colorRef) / 1000f);
-            Settings settings = Helper.LoadSettings();
+            var settings = Pre_Control.Settings;
             __instance.NumMedTechText.fontSize = settings.fontsize;
             __instance.NumMedTechText.enableWordWrapping = false;
         }
@@ -187,7 +233,7 @@ namespace MonthlyTechandMoraleAdjustment
     {
         public static void Postfix(SimGameState __instance)
         {
-            Settings settings = Helper.LoadSettings();
+            var settings = Pre_Control.Settings;
             var expenselevel = Fields.ExpenseLevel;
             int MoraleChange = 0;
             if (expenselevel == -2)
@@ -216,7 +262,7 @@ namespace MonthlyTechandMoraleAdjustment
     {
         public static void Postfix(SGCaptainsQuartersStatusScreen __instance, EconomyScale expenditureLevel)
         {
-            Settings settings = Helper.LoadSettings();
+            var settings = Pre_Control.Settings;
             var moraleFields = Traverse.Create(__instance).Field("ExpenditureLvlBtnMoraleFields").GetValue<List<TextMeshProUGUI>>();
             var SimGameTrav = Traverse.Create(__instance).Field("simState").GetValue<SimGameState>();
             var sim = UnityGameInstance.BattleTechGame.Simulation;
@@ -279,68 +325,5 @@ namespace MonthlyTechandMoraleAdjustment
                 instance.Method("SetField", new Type[] { typeof(TextMeshProUGUI), typeof(string) }, new object[] { moraleFieldValue, ModField }).GetValue();
             }
         }
-    }
-    public class Helper
-    {
-        // Token: 0x06000001 RID: 1 RVA: 0x0000208C File Offset: 0x0000028C
-        public static Settings LoadSettings()
-        {
-            Settings result;
-            try
-            {
-                using (StreamReader streamReader = new StreamReader("mods/MonthlyTechandMoraleAdjustment/settings.json"))
-                {
-                    result = JsonConvert.DeserializeObject<Settings>(streamReader.ReadToEnd());
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex);
-                result = null;
-            }
-            return result;
-        }
-        public class Logger
-        {
-            // Token: 0x06000007 RID: 7 RVA: 0x0000210C File Offset: 0x0000030C
-            public static void LogError(Exception ex)
-            {
-                using (StreamWriter streamWriter = new StreamWriter("mods/MonthlyTechandMoraleAdjustment/Log.txt", true))
-                {
-                    streamWriter.WriteLine(string.Concat(new string[]
-                    {
-                "Message :",
-                ex.Message,
-                "<br/>",
-                Environment.NewLine,
-                "StackTrace :",
-                ex.StackTrace,
-                Environment.NewLine,
-                "Date :",
-                DateTime.Now.ToString()
-                    }));
-                    streamWriter.WriteLine(Environment.NewLine + "-----------------------------------------------------------------------------" + Environment.NewLine);
-                }
-            }
-
-            // Token: 0x06000008 RID: 8 RVA: 0x000021C0 File Offset: 0x000003C0
-            public static void LogLine(string line)
-            {
-                string path = "mods/MonthlyTechandMoraleAdjustment/Log.txt";
-                using (StreamWriter streamWriter = new StreamWriter(path, true))
-                {
-                    streamWriter.WriteLine(line + Environment.NewLine + "Date :" + DateTime.Now.ToString());
-                    streamWriter.WriteLine(Environment.NewLine + "-----------------------------------------------------------------------------" + Environment.NewLine);
-                }
-            }
-        }
-    }
-    public class Settings
-    {
-        public bool AdjustTechs = true;
-        public int MechTechScale = 1;
-        public bool QuirksEnabled = false;
-
-        public int fontsize = 20;
     }
 }
