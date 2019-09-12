@@ -54,16 +54,38 @@ namespace MonthlyTechandMoraleAdjustment
             public static void Prefix()
             {
                 var sim = UnityGameInstance.BattleTechGame.Simulation;
-                if (sim == null) return;
                 sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
+            }
+
+            public static void Postfix()
+            {
+                
             }
         }
 
         internal static void SerializeMTMA()
         {
             var sim = UnityGameInstance.BattleTechGame.Simulation;
+            bool tagexists = false;
+            foreach (string tagcheck in sim.CompanyTags)
+            {
+                if (tagcheck.StartsWith("MTMA"))
+                    tagexists = true;
+            }
+            if (!tagexists)
+            {
+                Adjust_Techs_Financial_Report_Patch.SaveFields = new SaveFields(0, 0, 0);
+                Fields.ExpenseLevel = 0;
+                Fields.DeltaMechTech = 0;
+                Fields.DeltaMedTech = 0;
+            }
             sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
             sim.CompanyTags.Add("MTMA" + JsonConvert.SerializeObject(Adjust_Techs_Financial_Report_Patch.SaveFields));
+            foreach (string tagcheck in sim.CompanyTags)
+            {
+                if (tagcheck.StartsWith("MTMA"))
+                    Logger.Log(tagcheck);
+            }
         }
 
         internal static void DeserializeMTMA()

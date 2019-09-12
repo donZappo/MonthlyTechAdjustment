@@ -3,6 +3,7 @@ using System.Reflection;
 using BattleTech;
 using Harmony;
 using BattleTech.UI;
+using BattleTech.UI.TMProWrapper;
 using Newtonsoft;
 using Newtonsoft.Json;
 using System.IO;
@@ -100,6 +101,8 @@ namespace MonthlyTechandMoraleAdjustment
 
                 var StartingMechTech = __instance.CompanyStats.GetValue<int>("MechTechSkill");
                 var StartingMedTech = __instance.CompanyStats.GetValue<int>("MedTechSkill");
+                Logger.Log(StartingMechTech.ToString());
+                Logger.Log(StartingMedTech.ToString());
                 var MechTChange = StartingMechTech + dMechTech;
                 var MedTChange = StartingMedTech + dMedTech;
 
@@ -263,7 +266,7 @@ namespace MonthlyTechandMoraleAdjustment
         public static void Postfix(SGCaptainsQuartersStatusScreen __instance, EconomyScale expenditureLevel)
         {
             var settings = Pre_Control.Settings;
-            var moraleFields = Traverse.Create(__instance).Field("ExpenditureLvlBtnMoraleFields").GetValue<List<TextMeshProUGUI>>();
+            var moraleFields = Traverse.Create(__instance).Field("ExpenditureLvlBtnMoraleFields").GetValue<List<LocalizableText>>();
             var SimGameTrav = Traverse.Create(__instance).Field("simState").GetValue<SimGameState>();
             var sim = UnityGameInstance.BattleTechGame.Simulation;
 
@@ -273,6 +276,7 @@ namespace MonthlyTechandMoraleAdjustment
                 string ChangeComb = "";
                 foreach (KeyValuePair<EconomyScale, int> keyValuePair in SimGameTrav.ExpenditureMoraleValue)
                 {
+            
                     SimGameTrav.SetExpenditureLevel(keyValuePair.Key, false);
                     int TechNum = num3 - 2;
                     if (TechNum == -2)
@@ -292,12 +296,12 @@ namespace MonthlyTechandMoraleAdjustment
                     }
                     num3++;
                 }
-
+             
                 SimGameTrav.SetExpenditureLevel(expenditureLevel, false);
 
                 int ELMV = SimGameTrav.ExpenditureMoraleValue[SimGameTrav.ExpenditureLevel];
                 int skillnum = 0;
-                
+           
                 if (ELMV == sim.Constants.Story.SpartanMoraleModifier)
                     skillnum = -4;
                 if (ELMV == sim.Constants.Story.RestrictedMoraleModifier)
@@ -308,7 +312,7 @@ namespace MonthlyTechandMoraleAdjustment
                     skillnum = 1;
                 if (ELMV == sim.Constants.Story.ExtravagantMoraleModifier)
                     skillnum = 2;
-
+             
                 string MString = ELMV.ToString();
                 if (ELMV > 0)
                 {
@@ -319,10 +323,11 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     SString = "+" + SString;
                 }
+               
                 string ModField = MString + ", " + SString;
                 var instance = Traverse.Create(__instance);
                 var moraleFieldValue = instance.Field("MoraleValueField").GetValue<TextMeshProUGUI>();
-                instance.Method("SetField", new Type[] { typeof(TextMeshProUGUI), typeof(string) }, new object[] { moraleFieldValue, ModField }).GetValue();
+                instance.Method("SetField", new Type[] { typeof(LocalizableText), typeof(string) }, new object[] { moraleFieldValue, ModField }).GetValue();
             }
         }
     }
