@@ -101,8 +101,6 @@ namespace MonthlyTechandMoraleAdjustment
 
                 var StartingMechTech = __instance.CompanyStats.GetValue<int>("MechTechSkill");
                 var StartingMedTech = __instance.CompanyStats.GetValue<int>("MedTechSkill");
-                Logger.Log(StartingMechTech.ToString());
-                Logger.Log(StartingMedTech.ToString());
                 var MechTChange = StartingMechTech + dMechTech;
                 var MedTChange = StartingMedTech + dMedTech;
 

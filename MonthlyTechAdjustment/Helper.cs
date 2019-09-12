@@ -81,11 +81,6 @@ namespace MonthlyTechandMoraleAdjustment
             }
             sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
             sim.CompanyTags.Add("MTMA" + JsonConvert.SerializeObject(Adjust_Techs_Financial_Report_Patch.SaveFields));
-            foreach (string tagcheck in sim.CompanyTags)
-            {
-                if (tagcheck.StartsWith("MTMA"))
-                    Logger.Log(tagcheck);
-            }
         }
 
         internal static void DeserializeMTMA()
