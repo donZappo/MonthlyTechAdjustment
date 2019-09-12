@@ -54,6 +54,7 @@ namespace MonthlyTechandMoraleAdjustment
             public static void Prefix()
             {
                 var sim = UnityGameInstance.BattleTechGame.Simulation;
+                if (sim == null) return;
                 sim.CompanyTags.Where(tag => tag.StartsWith("MTMA")).Do(x => sim.CompanyTags.Remove(x));
             }
 
