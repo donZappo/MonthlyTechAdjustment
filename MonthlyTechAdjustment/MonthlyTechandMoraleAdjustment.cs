@@ -126,6 +126,11 @@ namespace MonthlyTechandMoraleAdjustment
                 {
                     if (pilot.pilotDef.PilotTags.Contains("pilot_noble") && settings.QuirksEnabled)
                     {
+                        if (pilot.pilotDef.PilotTags.Contains("pilot_morale_high"))
+                            pilot.pilotDef.PilotTags.Remove("pilot_morale_high");
+                        if (pilot.pilotDef.PilotTags.Contains("pilot_morale_low"))
+                            pilot.pilotDef.PilotTags.Remove("pilot_morale_low");
+
                         if (Fields.ExpenseLevel == 2)
                         {
                             pilot.pilotDef.PilotTags.Add("pilot_morale_high");
@@ -137,7 +142,7 @@ namespace MonthlyTechandMoraleAdjustment
                             Traverse.Create(eventTagSet).Method("UpdateHashCode").GetValue();
 
                             var EventTime = new TemporarySimGameResult();
-                            EventTime.ResultDuration = 30;
+                            EventTime.ResultDuration = 29;
                             EventTime.Scope = EventScope.MechWarrior;
                             EventTime.TemporaryResult = true;
                             EventTime.AddedTags = eventTagSet;
@@ -158,7 +163,7 @@ namespace MonthlyTechandMoraleAdjustment
                             Traverse.Create(eventTagSet).Method("UpdateHashCode").GetValue();
 
                             var EventTime = new TemporarySimGameResult();
-                            EventTime.ResultDuration = 30;
+                            EventTime.ResultDuration = 29;
                             EventTime.Scope = EventScope.MechWarrior;
                             EventTime.TemporaryResult = true;
                             EventTime.AddedTags = eventTagSet;
